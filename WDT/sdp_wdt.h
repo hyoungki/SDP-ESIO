@@ -4,15 +4,15 @@
  *             Shared header: kernel driver + userspace application
  *
  * Hardware (imx6sx):
- *   GPIO1_22  →  WDT_CTRL  (watchdog enable,  sysfs GPIO 22)
- *   GPIO1_25  →  WDT_CLR   (keepalive toggle, sysfs GPIO 25)
+ *   GPIO1_22  ->  WDT_CTRL  (watchdog enable,  sysfs GPIO 22)
+ *   GPIO1_25  ->  WDT_CLR   (keepalive toggle, sysfs GPIO 25)
  *
  * Device node: /dev/SDP_WDT
  *
  * Interface:
- *   write(fd, buf, 1)              → toggle WDT_CLR
- *   ioctl(fd, SET_WDT_CTRL, 0|1)  → set WDT_CTRL low/high
- *   ioctl(fd, GET_WDT_STATUS, &s) → read back both GPIO states
+ *   write(fd, buf, 1)              -> toggle WDT_CLR
+ *   ioctl(fd, SET_WDT_CTRL, 0|1)  -> set WDT_CTRL low/high
+ *   ioctl(fd, GET_WDT_STATUS, &s) -> read back both GPIO states
  */
 
 #ifndef _SDP_WDT_H_
@@ -21,7 +21,7 @@
 #include <linux/ioctl.h>
 
 /* -------------------------------------------------------------------------
- * ioctl magic number – choose something unlikely to collide.
+ * ioctl magic number - choose something unlikely to collide.
  * 'W' is used by kernel's own watchdog; use 0xB2 for SDP private use.
  * ---------------------------------------------------------------------- */
 #define SDP_WDT_IOC_MAGIC   0xB2
