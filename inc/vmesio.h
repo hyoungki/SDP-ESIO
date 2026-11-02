@@ -160,10 +160,31 @@ typedef struct
         byte    gwAddr[4][16];          // Network# GW-Address
         byte    subMask[4][16];         // Network# SUB-Mask
 
+        /* ---- ESIO program update (2026-10-30) ---- */
+        word    esioCmd;                // MPU->ESIO : 0=none, ESIO_CMD_RESET_EXIT (MPU writes)
+        word    esioCmdSeq;             // MPU->ESIO : request sequence, 0 not used (MPU writes)
+        word    esioAckSeq;             // ESIO->MPU : seq of accepted request (ESIO writes)
+        word    esioState;              // ESIO->MPU : ESIO_ST_xxx (ESIO writes)
+        word    esioErr;                // ESIO->MPU : error code (ESIO writes)
+        byte    esioVersion[16];        // ESIO->MPU : ASCII, NUL terminated (ESIO writes)
+
 #if 0 //hkkim
     } __attribute__ ((packed)) VME_SIODCB;
 #else
     }  VME_SIODCB;
 #endif 
+
+/* ---- ESIO program update (2026-10-30) : command / state ---- */
+#define ESIO_CMD_RESET_EXIT     0x5A02      /* MPU -> ESIO : stop ESIO program          */
+#define ESIO_ST_UNKNOWN         0
+#define ESIO_ST_RUN             1
+#define ESIO_ST_STOPPING        2
+#define ESIO_ST_STOPPED         6           /* all ESIO tasks terminated                */
+#define ESIO_ERR_NONE           0
+#define ESIO_ERR_BAD_CMD        1
+#define ESIO_VERSION_LEN        16          /* = sizeof(esioVersion) */
+
+/* VME_SIODCB must fit in one VME SIO window */
+typedef char chk_vme_siodcb_size[(sizeof(VME_SIODCB) <= VMESIO_SIZE) ? 1 : -1];
 
 

@@ -517,6 +517,100 @@ void DisplayLogo(void)
 	    
  }
 
+/* ---------------------------------------------------------------- */
+/*  ESIO program update (2026-10-30)                                */
+/*   - MPU exit request (VME esioCmd/esioCmdSeq) -> ack -> stop     */
+/*   - /mnt/bin/ESIO-VERSION.txt -> VME esioVersion                 */
+/*  design : design/20261030-ESIO-SIDE-update.md                    */
+/* ---------------------------------------------------------------- */
+#define ESIO_VERSION_FILE   "/mnt/bin/ESIO-VERSION.txt"
+
+static word lastCmdSeq = 0;         /* last handled request (compare with !=) */
+static int  stopByMpu  = 0;         /* 1 : stop was requested by MPU          */
+
+void init_esio_update(void)
+{
+    FILE    *fp;
+    char    line[64], ver[ESIO_VERSION_LEN];
+    char    buffer[160];
+    int     i, n, c;
+
+    /* requests already in VME at start are treated as handled */
+    lastCmdSeq = vmeSioDCB->esioCmdSeq;
+
+    /* ESIO-VERSION.txt : missing -> "not found", empty -> "invalid" */
+    snprintf(ver, sizeof(ver), "not found");
+    if ((fp = fopen(ESIO_VERSION_FILE, "r")) != NULL)
+    {
+        snprintf(ver, sizeof(ver), "invalid");
+        if (fgets(line, sizeof(line), fp) != NULL)
+        {
+            n = 0;
+            for (i = 0; line[i] != 0 && n < ESIO_VERSION_LEN - 1; i++)
+            {
+                c = (unsigned char) line[i];
+                if (c == '\n' || c == '\r')     break;          /* first line only */
+                if (c < 0x20 || c > 0x7e)       continue;       /* printable ASCII only */
+                if (c == ' ' && n == 0)         continue;       /* trim leading space */
+                ver[n++] = (char) c;
+            }
+            while (n > 0 && ver[n-1] == ' ')    n--;            /* trim trailing space */
+            ver[n] = 0;
+            if (n == 0)     snprintf(ver, sizeof(ver), "invalid");
+        }
+        fclose(fp);
+    }
+
+    memset((void *) vmeSioDCB->esioVersion, 0, ESIO_VERSION_LEN);
+    memcpy((void *) vmeSioDCB->esioVersion, ver, strlen(ver));
+
+    printf("wdt> ESIO version = [%s]  (sizeof(VME_SIODCB)=%d, offset(esioCmd)=%d)\n", ver,
+           (int) sizeof(VME_SIODCB), (int) ((char *) &vmeSioDCB->esioCmd - (char *) vmeSioDCB));
+    fflush(stdout);
+
+    sprintf(buffer, "wdt> ESIO version = [%s]", ver);
+    LogFile_MPU(shmPtr, ENT_NOT_DEFINED, buffer, strlen(buffer));
+}
+
+/* called every main-loop turn (100 ms) */
+void check_MPU_command(void)
+{
+    word    seq, cmd;
+    char    buffer[160];
+
+    seq = vmeSioDCB->esioCmdSeq;
+    if (seq == lastCmdSeq)      return;             /* no new request */
+    lastCmdSeq = seq;
+    if (seq == 0)               return;             /* 0 is not used by MPU */
+
+    __sync_synchronize();                           /* MPU writes cmd first, seq last */
+    cmd = vmeSioDCB->esioCmd;
+
+    if (cmd == ESIO_CMD_RESET_EXIT)
+    {
+        vmeSioDCB->esioAckSeq = seq;                /* ack first */
+        vmeSioDCB->esioState  = ESIO_ST_STOPPING;
+        stopByMpu = 1;
+
+        printf("wdt> [STOP] stop command received from MPU (seq=%d) - ack sent\n", seq);
+        printf("wdt> [STOP] ESIO program will stop now ...\n");
+        fflush(stdout);
+
+        sprintf(buffer, "wdt> [STOP] stop command received from MPU (seq=%d)", seq);
+        LogFile_MPU(shmPtr, ENT_NOT_DEFINED, buffer, strlen(buffer));
+
+        termExec = 0;                               /* same path as SIGTERM */
+    }
+    else
+    {
+        vmeSioDCB->esioErr    = ESIO_ERR_BAD_CMD;
+        vmeSioDCB->esioAckSeq = seq;                /* ack so that MPU does not wait */
+
+        printf("wdt> [CMD] unknown command 0x%04X from MPU (seq=%d) - ignored\n", cmd, seq);
+        fflush(stdout);
+    }
+}
+
 //
 // 모듈:	ClearEnvironment()
 //
@@ -524,7 +618,12 @@ void ClearEnv(void)
 {
     int wdt_ctrl =0  ;
     // 수행중인 프로세스들을 종료시킨다
+    printf("wdt> [STOP] stop in progress : terminating ESIO tasks%s ...\n", stopByMpu ? " (MPU request)" : "");
+    fflush(stdout);
 	TerminateProcess();
+    if (vmeSioDCB != NULL)  vmeSioDCB->esioState = ESIO_ST_STOPPED;     /* all tasks terminated */
+    printf("wdt> [STOP] ESIO tasks stopped - WDT exit\n");
+    fflush(stdout);
 	
 	opr->stscode = 0;
 		         	
@@ -1707,6 +1806,7 @@ int	main(int argc, char **argv)
     /* 내부변수 초기화                                  */
     /* ------------------------------------------------ */
     init_variable();
+    init_esio_update();                 /* ESIO program update : version + request init */
 
 // hkkim    
 //    ioctl(wdtid, PMU_WDT_CTR_CLR, NULL);   /* WDT Clear.... */
@@ -1785,6 +1885,7 @@ int	main(int argc, char **argv)
     
     /* 2019.07.17 WDT 기동시...DEVICE 상태 초기화 */
     wdtDevInitial();
+    vmeSioDCB->esioState = ESIO_ST_RUN;
     
 	while(termExec)
 	{
@@ -1797,6 +1898,7 @@ int	main(int argc, char **argv)
         /* ---------------------------------------- */
         vmeSioDCB->sioValid = 0x1234;                       // Valid 정보
         vmeSioDCB->sioCount = vmeSioDCB->activeCount;       // activeCount => sioCount로 대치
+        check_MPU_command();                                /* MPU exit request (every 100 ms) */
         cputick = vmeSioDCB->activeCount;
         
         check_ESIO_mode(cputick);       // ESIO 동작모드 구분 ...MASTER/SLAVE
