@@ -688,7 +688,8 @@ int esioParaConfig()
     /* 주 ESIO : Network 구성정보 초기화    */
     /* ------------------------------------ */
     // 2026-05-26 오후 7:57:06 
-    for(j=0; j < 4; j++)
+    // 2026-11-03 오전 9:35:21  4->ESIO_NET_MAX
+    for(j=0; j < ESIO_NET_MAX; j++)
     {
         dbEnet = (DB_ENET_ENTRY *) &dbESIO->mstNetConfig[j];
         esioNet= (ESIO_NET_ENTRY *)&esioCFG->mstNetConfig[j];
@@ -703,7 +704,8 @@ int esioParaConfig()
     /* 예비 ESIO : Network 구성정보 초기화  */
     /* ------------------------------------ */
     // 2026-05-26 오후 7:57:19
-    for(j=0; j < 4; j++)
+    // 2026-11-03 오전 9:35:21  4->ESIO_NET_MAX
+    for(j=0; j < ESIO_NET_MAX; j++)
     {
         dbEnet = (DB_ENET_ENTRY *) &dbESIO->slvNetConfig[j];
         esioNet= (ESIO_NET_ENTRY *)&esioCFG->slvNetConfig[j];

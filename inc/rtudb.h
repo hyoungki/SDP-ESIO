@@ -438,12 +438,12 @@ typedef struct
         /* ---------------------------- */        
         /* Master MPU Network 구성정보  */
         /* ---------------------------- */ 
-        DB_MNET_ENTRY   master_netCfg[3];
+        DB_MNET_ENTRY   master_netCfg[MPU_NET_MAX]; // 2026-11-02 오후 7:19:39 3-->4
         
         /* ---------------------------- */ 
         /* Slave  MPU Network 구성정보  */
         /* ---------------------------- */ 
-        DB_MNET_ENTRY   slave_netCfg[3];
+        DB_MNET_ENTRY   slave_netCfg[MPU_NET_MAX]; // 2026-11-02 오후 7:19:31 3 --> 4
         
         byte    dualMpu;                // MPU Parameter : CPU 이중화 운영모드
         byte	dualModule;             // MPU Parameter : Module 이중화 운영모드 

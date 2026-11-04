@@ -215,19 +215,26 @@ void CmdDispRelayCfg()
 /*----------------------------------------------------------------------------
 * Function Name : CmdDispMPUCfg()
 * 수행내용: MCU 구성정보 Desplay
+
+* 2026-11-02 오후 7:17:16 network 3->4개로
+
 ---------------------------------------------------------------------------- */  
 void  CmdDispMPUCfg()
 {
     MPU_NET_ENTRY   *mNet1, *mNet2,*mNet3, *sNet1, *sNet2,*sNet3;
+    MPU_NET_ENTRY   *mNet4, *sNet4;
     
     mNet1 = (MPU_NET_ENTRY *) &mpuCFG->master_netCfg[0];
     mNet2 = (MPU_NET_ENTRY *) &mpuCFG->master_netCfg[1];
     mNet3 = (MPU_NET_ENTRY *) &mpuCFG->master_netCfg[2];
+// 2026-11-02 오후 7:18:07
+    mNet3 = (MPU_NET_ENTRY *) &mpuCFG->master_netCfg[3];
     
     sNet1 = (MPU_NET_ENTRY *) &mpuCFG->slave_netCfg[0];
     sNet2 = (MPU_NET_ENTRY *) &mpuCFG->slave_netCfg[1];
     sNet3 = (MPU_NET_ENTRY *) &mpuCFG->slave_netCfg[2];
-    
+//    
+    sNet3 = (MPU_NET_ENTRY *) &mpuCFG->slave_netCfg[3];
     
     printf("\n============================================================================\n");
     printf(" %s : MCU Configuration  : %s \n", TARGET_NAME, mpuCFG->sdpNameStr);
@@ -247,9 +254,11 @@ void  CmdDispMPUCfg()
     printf("[*] Master Network#1 Info(IP/GW/SUB): use = %d, %s/%s/%s\n",   mNet1->useFlag, mNet1->ipAddr, mNet1->gwAddr, mNet1->subMask);
     printf("           Network#2 Info(IP/GW/SUB): use = %d, %s/%s/%s\n",   mNet2->useFlag, mNet2->ipAddr, mNet2->gwAddr, mNet2->subMask);
     printf("           Network#3 Info(IP/GW/SUB): use = %d, %s/%s/%s\n\n", mNet3->useFlag, mNet3->ipAddr, mNet3->gwAddr, mNet3->subMask);
+    printf("           Network#4 Info(IP/GW/SUB): use = %d, %s/%s/%s\n\n", mNet4->useFlag, mNet4->ipAddr, mNet4->gwAddr, mNet4->subMask);
     printf("[*] Slave  Network#1 Info(IP/GW/SUB): use = %d, %s/%s/%s\n",   sNet1->useFlag, sNet1->ipAddr, sNet1->gwAddr, sNet1->subMask);
     printf("           Network#2 Info(IP/GW/SUB): use = %d, %s/%s/%s\n",   sNet2->useFlag, sNet2->ipAddr, sNet2->gwAddr, sNet2->subMask);
     printf("           Network#3 Info(IP/GW/SUB): use = %d, %s/%s/%s\n",   sNet3->useFlag, sNet3->ipAddr, sNet3->gwAddr, sNet3->subMask);
+    printf("           Network#4 Info(IP/GW/SUB): use = %d, %s/%s/%s\n",   sNet4->useFlag, sNet4->ipAddr, sNet4->gwAddr, sNet4->subMask);
     printf("============================================================================\n\n");
     
 }

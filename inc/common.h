@@ -201,7 +201,7 @@ typedef unsigned short  word;
 
 //2026-05-27 오전 9:44:27
 #define ESIO_NET_MAX  4
-
+#define MPU_NET_MAX   4 
 /* ----------------------------- */
 /* SHARERAM 관련 Structure 외부선언 */
 /* ----------------------------- */ 
